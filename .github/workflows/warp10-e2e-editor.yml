@@ -9,6 +9,10 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    services:
+      docker:
+        image: docker:dind
+        options: --privileged
 
     steps:
       - name: Checkout code
@@ -21,6 +25,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
 
       - name: Start Grafana and Warp10 stack
         run: docker compose -f docker-compose-new.yaml up -d
