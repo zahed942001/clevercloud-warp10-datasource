@@ -9,10 +9,6 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    services:
-      docker:
-        image: docker:dined
-        options: --privileged
 
     steps:
       - name: Checkout code
@@ -29,18 +25,20 @@ jobs:
       - name: Start Grafana and Warp10 stack
         run: docker compose -f docker-compose-new.yaml up -d
 
-      - name: Wait for Grafana dashboard to become available
+      - name: Wait for Grafana to be ready
         run: |
-          echo "Waiting for Grafana to fully initialize..."
+          echo "Waiting for Grafana to be ready..."
           for i in {1..30}; do
-            status=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/api/health)
-            if [ "$status" == "200" ]; then
-              echo "Grafana API is healthy!"
-              break
+            if curl -s http://localhost:3000/login | grep -q "Grafana"; then
+              echo "Grafana is up!"
+              exit 0
             fi
-            echo "Status: $status. Retrying..."
+            echo "Still waiting for Grafana..."
             sleep 5
           done
+          echo "Grafana failed to start in time." >&2
+          docker compose -f docker-compose-new.yaml logs
+          exit 1
 
       - name: Run Playwright E2E tests
         run: npm run e2e
