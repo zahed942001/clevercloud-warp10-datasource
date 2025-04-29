@@ -44,10 +44,10 @@ test('Warp10 Datasource health check', async ({ page }) => {
     await page.waitForTimeout(1000);
 
     if (healthResponse) {
-        log(`✅ Status: ${healthResponse.status}`);
-        log(`✅ Message: ${healthResponse.message}`);
+        log(`Status: ${healthResponse.status}`);
+        log(`Message: ${healthResponse.message}`);
     } else {
-        log('❌ Health check response was not received.');
+        log('Health check response was not received.');
     }
 
     log('-->Test completed!');
