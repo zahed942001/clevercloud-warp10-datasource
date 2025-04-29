@@ -8,6 +8,13 @@ function log(message: string) {
 test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     const responses: any[] = [];
 
+    page.on('console', msg => {
+        if (msg.type() === 'error' && msg.text().includes('net::ERR_CONNECTION_REFUSED')) {
+            return; // Ignore it
+        }
+        console.log(`[console.${msg.type()}] ${msg.text()}`);
+    });
+
     page.on('response', async (response) => {
         const url = response.url();
         if (
@@ -28,6 +35,19 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     log('-->Navigating to dashboard with panel...');
     await page.goto('http://localhost:3000');
 
+    await page.waitForSelector('#mega-menu-toggle', { state: 'visible' });
+    await page.waitForTimeout(500);
+    await page.getByRole('button', { name: 'Open menu' }).click();
+    await page.waitForSelector('a[href="/dashboards"]', { timeout: 3000 });
+    await page.locator('a[href="/dashboards"]').click();
+    await page.getByRole('link', { name: 'New dashboard' }).click();
+    await page.getByRole('button', {
+        name: 'Menu for panel with title Graph Example',
+    }).click();
+
+    await page.getByRole('link', {
+        name: 'Edit',
+    }).click();
     log('-->Waiting for query editor...');
     const editor = page.locator('.query-editor-row textarea').first();
     await expect(editor).toBeAttached({ timeout: 10000 });
