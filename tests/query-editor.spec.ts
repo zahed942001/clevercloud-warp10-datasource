@@ -39,7 +39,7 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     await page.waitForTimeout(500);
     await page.getByRole('button', { name: 'Open menu' }).click();
     await page.waitForSelector('a[href="/dashboards"]', { timeout: 3000 });
-    await page.locator('a[href="/dashboards"]').click();
+    await page.getByTestId('data-testid navigation mega-menu').getByRole('link', { name: 'Dashboards' }).click();
     await page.getByRole('link', { name: 'New dashboard' }).click();
     await page.getByRole('button', {
         name: 'Menu for panel with title Graph Example',
