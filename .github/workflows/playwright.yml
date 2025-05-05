@@ -30,7 +30,7 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Start Grafana and Warp10 stack
-        run: docker compose -f docker-compose-plugin.yaml up -d
+        run: docker compose -f tests/config/docker-compose-plugin.yaml up -d
 
       - name: Wait for Grafana to be healthy
         run: |
@@ -45,7 +45,7 @@ jobs:
             sleep 5
           done
           echo "Grafana did not become healthy in time."
-          docker compose -f docker-compose-new.yaml logs
+          docker compose -f tests/config/docker-compose-plugin.yaml logs
           exit 1
 
       - name: Run Playwright tests
@@ -53,7 +53,7 @@ jobs:
 
       - name: Shutdown services
         if: always()
-        run: docker compose -f docker-compose-plugin.yaml down
+        run: docker compose -f tests/config/docker-compose-plugin.yaml down
 
       - name: Upload test report
         if: always()
