@@ -1,5 +1,3 @@
-version: '3.0'
-
 services:
   grafana:
     container_name: 'clevercloud-warp10-datasource'
@@ -10,8 +8,8 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./dist:/var/lib/grafana/plugins/clevercloud-warp10-datasource
-      - ./provisioning:/etc/grafana/provisioning
+      - ../../dist:/var/lib/grafana/plugins/clevercloud-warp10-datasource
+      - ../../provisioning:/etc/grafana/provisioning
     depends_on:
       - warp10
     networks:
