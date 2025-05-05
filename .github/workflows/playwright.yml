@@ -36,7 +36,7 @@ jobs:
         run: |
           echo "Waiting for Grafana to be healthy..."
           for i in {1..30}; do
-            STATUS=$(docker inspect --format='{{.State.Health.Status}}' grafana_container_name)
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' clevercloud-warp10-datasource)
             if [ "$STATUS" = "healthy" ]; then
               echo "Grafana is healthy!"
               exit 0

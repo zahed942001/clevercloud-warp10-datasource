@@ -24,7 +24,7 @@ export default defineConfig<PluginOptions>({
     {
       name: 'chromium',
       testDir: './tests',
-      testMatch: ['**/query-editor.spec.ts','**/constant-editor.spec.ts'],
+      testMatch: ['*.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
         storageState: 'playwright/.auth/admin.json',
