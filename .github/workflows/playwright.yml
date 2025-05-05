@@ -23,23 +23,28 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build plugin
+        run: npm run build
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
       - name: Start Grafana and Warp10 stack
-        run: docker compose -f docker-compose-new.yaml up -d
+        run: docker compose -f docker-compose-plugin.yaml up -d
 
-      - name: Wait for Grafana to be ready
+      - name: Wait for Grafana to be healthy
         run: |
-          echo "Waiting for Grafana to start..."
+          echo "Waiting for Grafana to be healthy..."
           for i in {1..30}; do
-            if curl -s http://localhost:3000/login | grep -q "Grafana"; then
-              echo "Grafana is up!"
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' grafana_container_name)
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Grafana is healthy!"
               exit 0
             fi
+            echo "Current status: $STATUS... retrying in 5s"
             sleep 5
           done
-          echo "Grafana did not become ready in time."
+          echo "Grafana did not become healthy in time."
           docker compose -f docker-compose-new.yaml logs
           exit 1
 
@@ -48,7 +53,7 @@ jobs:
 
       - name: Shutdown services
         if: always()
-        run: docker compose -f docker-compose-new.yaml down
+        run: docker compose -f docker-compose-plugin.yaml down
 
       - name: Upload test report
         if: always()
@@ -56,4 +61,3 @@ jobs:
         with:
           name: playwright-report
           path: playwright-report/
-          retention-days: 30
