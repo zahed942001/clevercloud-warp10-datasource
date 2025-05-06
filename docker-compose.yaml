@@ -1,4 +1,4 @@
-version: '3.0'
+version: '3.4'
 
 services:
   grafana:
@@ -12,3 +12,9 @@ services:
     volumes:
       - ./dist:/var/lib/grafana/plugins/clevercloud-warp10-datasource
       - ./provisioning:/etc/grafana/provisioning
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:3000/login | grep -q 'Grafana'"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 10s
