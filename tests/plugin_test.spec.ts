@@ -6,6 +6,91 @@ function log(message: string) {
     console.log(`[${now}] ${message}`);
 }
 
+async function clickMenuToggle(page: Page) {
+    const selectors = [
+        'button[aria-label="Toggle menu"]',
+        'button[aria-label="Open menu"]',
+        '#mega-menu-toggle',
+    ];
+
+    const found = await Promise.race(
+        selectors.map(selector =>
+            page.waitForSelector(selector, { state: 'visible' }).then(() => selector).catch(() => null)
+        )
+    );
+
+    if (found) {
+        await page.waitForTimeout(500);
+        await page.click(found);
+        log(`Clicked toggle menu with selector: ${found}`);
+    } else {
+        throw new Error('No menu toggle button found for known selectors');
+    }
+}
+
+async function clickDashboardsNav(page: Page) {
+    const selectors = [
+        'a[href="/dashboards"]',
+        'a[data-testid="data-testid Nav menu item"] >> text=Dashboards',
+        'a:has-text("Dashboards")',
+    ];
+
+    const found = await Promise.race(
+        selectors.map(selector =>
+            page.waitForSelector(selector, { state: 'visible' }).then(() => selector).catch(() => null)
+        )
+    );
+
+    if (found) {
+        await page.click(found);
+        console.log(`Clicked Dashboards nav with selector: ${found}`);
+    } else {
+        throw new Error('No Dashboards nav item found for known selectors');
+    }
+}
+
+async function goToNewDashboard(page: Page) {
+    // Try to click "New dashboard" directly
+    const newDashboard = await page.$('a:has-text("New dashboard")');
+    if (newDashboard) {
+        await newDashboard.click();
+        return;
+    }
+
+    // If not found, try clicking "General" then "New dashboard"
+    const general = await page.locator('text=General').first();
+    if (await general.isVisible()) {
+        await general.click();
+
+        const nestedNewDashboard = await page.locator('a:has-text("New dashboard")').first();
+        await nestedNewDashboard.waitFor({ state: 'visible' });
+        await nestedNewDashboard.click();
+    } else {
+        throw new Error('Neither "New dashboard" nor "General" was found');
+    }
+}
+
+async function clickEditButton(page: Page) {
+    // Try the modern role-based locator first
+    const roleBased = page.getByRole('link', { name: 'Edit' });
+    if (await roleBased.count() > 0 && await roleBased.first().isVisible()) {
+        await roleBased.first().click();
+        console.log('Clicked Edit link (role=link).');
+        return;
+    }
+
+    // Fallback: button with role=menuitem and visible text
+    const menuItemEdit = page.locator('button[role="menuitem"]:has-text("Edit")');
+    if (await menuItemEdit.count() > 0 && await menuItemEdit.first().isVisible()) {
+        await menuItemEdit.first().click();
+        console.log('Clicked Edit button (role=menuitem).');
+        return;
+    }
+
+    throw new Error('Edit button not found in either format.');
+}
+
+
 async function fillPairAndClickAdd({nameInput, valueInput, name, value, addButton, label, page}: { nameInput: Locator, valueInput: Locator, name: string, value: string, addButton?: Locator, label: string, page: Page }) {
     log(`--> Filling ${label} name`);
     await nameInput.pressSequentially(name);
@@ -68,19 +153,15 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     log('-->Navigating to dashboard with panel...');
     await page.goto('http://localhost:3000');
 
-    await page.waitForSelector('#mega-menu-toggle', { state: 'visible' });
+    await clickMenuToggle(page);
     await page.waitForTimeout(500);
-    await page.getByRole('button', { name: 'Open menu' }).click();
     await page.waitForSelector('a[href="/dashboards"]', { timeout: 3000 });
-    await page.getByTestId('data-testid navigation mega-menu').getByRole('link', { name: 'Dashboards' }).click();
-    await page.getByRole('link', { name: 'New dashboard' }).click();
+    await clickDashboardsNav(page);
+    await goToNewDashboard(page);
     await page.getByRole('button', {
         name: 'Menu for panel with title Graph Example',
     }).click();
-
-    await page.getByRole('link', {
-        name: 'Edit',
-    }).click();
+    await clickEditButton(page);
     log('-->Waiting for query editor...');
     const editor = page.locator('.query-editor-row textarea').first();
     await expect(editor).toBeAttached({ timeout: 10000 });
