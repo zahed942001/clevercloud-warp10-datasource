@@ -16,6 +16,7 @@ services:
       - warp10-net
     environment:
       - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=clevercloud-warp10-datasource
+      - WARP10_URL=http://warp10:8080
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/login"]
       interval: 10s
