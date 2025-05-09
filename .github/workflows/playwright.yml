@@ -32,6 +32,22 @@ jobs:
       - name: Start Grafana and Warp10 stack
         run: docker compose -f tests/config/docker-compose-plugin.yaml up -d
 
+      - name: Wait for Warp10 to be healthy
+        run: |
+          echo "Waiting for Warp10 to be healthy..."
+          for i in {1..30}; do
+            STATUS=$(docker inspect --format='{{.State.Health.Status}}' warp10)
+            if [ "$STATUS" = "healthy" ]; then
+              echo "Warp10 is healthy!"
+              exit 0
+            fi
+            echo "Warp10 status: $STATUS... retrying in 5s"
+            sleep 5
+          done
+          echo "Warp10 did not become healthy in time."
+          docker compose -f tests/config/docker-compose-plugin.yaml logs
+          exit 1
+
       - name: Wait for Grafana to be healthy
         run: |
           echo "Waiting for Grafana to be healthy..."
@@ -41,12 +57,13 @@ jobs:
               echo "Grafana is healthy!"
               exit 0
             fi
-            echo "Current status: $STATUS... retrying in 5s"
+            echo "Grafana status: $STATUS... retrying in 5s"
             sleep 5
           done
           echo "Grafana did not become healthy in time."
           docker compose -f tests/config/docker-compose-plugin.yaml logs
           exit 1
+      
 
       - name: Run Playwright tests
         run: npx playwright test
