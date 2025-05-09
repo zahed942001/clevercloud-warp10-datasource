@@ -50,24 +50,29 @@ async function clickDashboardsNav(page: Page) {
 }
 
 async function goToNewDashboard(page: Page) {
-    // Try to click "New dashboard" directly
-    const newDashboard = await page.$('a:has-text("New dashboard")');
-    if (newDashboard) {
-        await newDashboard.click();
+    // Option 1: Direct link to "New dashboard"
+    const directNewDashboard = page.locator('a[href*="/new-dashboard"]', { hasText: 'New dashboard' });
+    if (await directNewDashboard.count() > 0 && await directNewDashboard.first().isVisible()) {
+        await directNewDashboard.first().click();
+        console.log('Clicked direct "New dashboard" link.');
         return;
     }
 
-    // If not found, try clicking "General" then "New dashboard"
-    const general = await page.locator('text=General').first();
-    if (await general.isVisible()) {
-        await general.click();
+    // Option 2: Click "General" section then "New dashboard"
+    const generalLink = page.getByText('General', { exact: true });
+    if (await generalLink.count() > 0 && await generalLink.first().isVisible()) {
+        await generalLink.first().click();
+        console.log('Clicked "General" section.');
 
-        const nestedNewDashboard = await page.locator('a:has-text("New dashboard")').first();
-        await nestedNewDashboard.waitFor({ state: 'visible' });
-        await nestedNewDashboard.click();
-    } else {
-        throw new Error('Neither "New dashboard" nor "General" was found');
+        const nestedNewDashboard = page.getByText('New dashboard', { exact: true });
+        if (await nestedNewDashboard.count() > 0 && await nestedNewDashboard.first().isVisible()) {
+            await nestedNewDashboard.first().click();
+            console.log('Clicked nested "New dashboard".');
+            return;
+        }
     }
+
+    throw new Error('Neither "New dashboard" nor "General > New dashboard" was found.');
 }
 
 async function clickEditButton(page: Page) {
@@ -157,6 +162,7 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     await page.waitForTimeout(500);
     await page.waitForSelector('a[href="/dashboards"]', { timeout: 3000 });
     await clickDashboardsNav(page);
+    await page.waitForTimeout(500);
     await goToNewDashboard(page);
     await page.getByRole('button', {
         name: 'Menu for panel with title Graph Example',
