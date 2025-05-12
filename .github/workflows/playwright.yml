@@ -57,13 +57,12 @@ jobs:
               echo "Grafana is healthy!"
               exit 0
             fi
-            echo "Grafana status: $STATUS... retrying in 5s"
+            echo "Current status: $STATUS... retrying in 5s"
             sleep 5
           done
           echo "Grafana did not become healthy in time."
           docker compose -f tests/config/docker-compose-plugin.yaml logs
           exit 1
-      
 
       - name: Run Playwright tests
         run: npx playwright test
