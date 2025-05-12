@@ -95,6 +95,11 @@ async function clickEditButton(page: Page) {
     throw new Error('Edit button not found in either format.');
 }
 
+async function getGrafanaVersion(page: Page): Promise<string> {
+    const response = await page.request.get('http://localhost:3000/api/health');
+    const body = await response.json();
+    return body.version;
+}
 
 async function fillPairAndClickAdd({nameInput, valueInput, name, value, addButton, label, page}: { nameInput: Locator, valueInput: Locator, name: string, value: string, addButton?: Locator, label: string, page: Page }) {
     log(`--> Filling ${label} name`);
@@ -130,21 +135,13 @@ async function logVisibility(page: Page, label: string) {
 
 test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     const responses: any[] = [];
-
-    page.on('console', msg => {
-        if (msg.type() === 'error' && msg.text().includes('net::ERR_CONNECTION_REFUSED')) {
-            return; // Ignore it
-        }
-        console.log(`[console.${msg.type()}] ${msg.text()}`);
-    });
+    let healthResponse: any = null;
 
     page.on('response', async (response) => {
         const url = response.url();
-        if (
-            url.includes('/api/ds/query') &&
-            response.request().method() === 'POST' &&
-            url.includes('ds_type=clevercloud-warp10-datasource')
-        ) {
+
+        // Capture query responses
+        if (url.includes('/api/ds/query') && response.request().method() === 'POST') {
             try {
                 const json = await response.json();
                 responses.push({ url, json, status: response.status() });
@@ -153,10 +150,32 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
                 log(`--> Failed to parse JSON for: ${url}`);
             }
         }
+
+        // Capture health check
+        if (url.includes('/api/datasources') && url.includes('/health')) {
+            try {
+                const json = await response.json();
+                healthResponse = json;
+                log(`--> Health check response received: ${JSON.stringify(json, null, 2)}`);
+            } catch (e) {
+                log(`--> Failed to parse health check response: ${e}`);
+            }
+        }
     });
+
+    page.on('console', msg => {
+        if (msg.type() === 'error' && msg.text().includes('net::ERR_CONNECTION_REFUSED')) {
+            return; // Ignore it
+        }
+        console.log(`[console.${msg.type()}] ${msg.text()}`);
+    });
+
 
     log('-->Navigating to dashboard with panel...');
     await page.goto('http://localhost:3000');
+    const version = await getGrafanaVersion(page);
+    log(`--> Detected Grafana version: ${version}`);
+    const major = parseInt(version.split('.')[0], 10);
 
     await clickMenuToggle(page);
     await page.waitForTimeout(500);
@@ -173,42 +192,49 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     await expect(editor).toBeAttached({ timeout: 10000 });
     await expect(editor).toBeVisible({ timeout: 10000 });
     log('-->Editor is visible and attached');
-
-    await page.waitForTimeout(3000);
-
-    expect(responses.length).toBeGreaterThan(0);
-    log(`--> ${responses.length} query response(s) captured`);
-
-    for (let index = 0; index < responses.length; index++) {
-        const r = responses[index];
-        log(`--> Checking response [${index + 1}/${responses.length}]`);
-
-        const resultA = r.json?.results?.A;
-
-        if (!resultA) {
-            log(`⚠️ Skipping response ${index + 1} – 'results.A' is undefined`);
-            continue;
+    if(major >= 10) {
+        await page.waitForTimeout(3000);
+        for (let i = 0; i < 10; i++) {
+            if (responses.length > 0) {
+                break;
+            }
+            await page.waitForTimeout(500);
         }
 
-        try {
-            expect(r.status).toBe(200);
-            log(`--> Status 200 OK`);
+        expect(responses.length).toBeGreaterThan(0);
+        log(`--> ${responses.length} query response(s) captured`);
 
-            expect(resultA.status).toBe(200);
-            log('--> Result A status is 200');
+        for (let index = 0; index < responses.length; index++) {
+            const r = responses[index];
+            log(`--> Checking response [${index + 1}/${responses.length}]`);
 
-            const schemaName = resultA.frames?.[0]?.schema?.name;
-            log(`--> Schema name: ${schemaName}`);
-            expect(typeof schemaName).toBe('string');
+            const resultA = r.json?.results?.A;
 
-            expect(Array.isArray(resultA.frames?.[0]?.data?.values?.[0])).toBe(true);
-            log('--> Returned data is a valid array');
+            if (!resultA) {
+                log(`⚠️ Skipping response ${index + 1} – 'results.A' is undefined`);
+                continue;
+            }
 
-            // 🔍 Print full JSON response
-            log(`--> Full JSON for response ${index + 1}:\n` + JSON.stringify(r.json, null, 2));
+            try {
+                expect(r.status).toBe(200);
+                log(`--> Status 200 OK`);
 
-        } catch (error) {
-            log(`❌ Error in response ${index + 1}: ${(error as Error).message}`);
+                expect(resultA.status).toBe(200);
+                log('--> Result A status is 200');
+
+                const schemaName = resultA.frames?.[0]?.schema?.name;
+                log(`--> Schema name: ${schemaName}`);
+                expect(typeof schemaName).toBe('string');
+
+                expect(Array.isArray(resultA.frames?.[0]?.data?.values?.[0])).toBe(true);
+                log('--> Returned data is a valid array');
+
+                // 🔍 Print full JSON response
+                log(`--> Full JSON for response ${index + 1}:\n` + JSON.stringify(r.json, null, 2));
+
+            } catch (error) {
+                log(`❌ Error in response ${index + 1}: ${(error as Error).message}`);
+            }
         }
     }
     await expect(editor).toHaveValue(
@@ -235,23 +261,13 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     log('--> Query editor content is correct');
     log('--> Query Editor Test completed!');
 
-    // Capture health check response
-    let healthResponse: any = null;
 
-    page.on('response', async (response) => {
-        const url = response.url();
-        if (url.includes('/api/datasources') && url.includes('/health')) {
-            try {
-                const json = await response.json();
-                healthResponse = json;
-                log(`--> Health check response received: ${JSON.stringify(json, null, 2)}`);
-            } catch (e) {
-                log(`--> Failed to parse health check response: ${e}`);
-            }
-        }
-    });
     log('--> Navigating to data sources page...');
-    await page.goto('http://localhost:3000/connections/datasources/new');
+    if (major < 10) {
+        await page.goto('http://localhost:3000/connections/your-connections/datasources/new');
+    } else {
+        await page.goto('http://localhost:3000/connections/datasources/new');
+    }
     // Wait for the data sources page to load
     await page.waitForTimeout(1000);
     // Enter Warp10 datasource creation
@@ -268,7 +284,11 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     log(`--> URL input filled with: ${currentValue}`);
 
     log('--> Clicking Save & test button...');
-    await page.getByRole('button', { name: 'Save & test' }).click();
+    if (major < 10) {
+        await page.getByRole('button', { name: 'Data source settings page Save and Test button' }).click();
+    } else {
+        await page.getByRole('button', { name: 'Save & test' }).click();
+    }
 
     // Wait for the response to be received
     await page.waitForTimeout(1000);
@@ -280,7 +300,7 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
         log('--> Health check response was not received.');
     }
 
-    log('--> illing and applying constats and macros')
+    log('--> Filling and applying constats and macros')
 
     await fillPairAndClickAdd({
         nameInput: page.locator('#constant_name'),
@@ -302,7 +322,12 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
         page
     });
 
-    await page.getByRole('button', { name: 'Save & test' }).click();
+    log('--> Clicking Save & test button...');
+    if (major < 10) {
+        await page.getByRole('button', { name: 'Data source settings page Save and Test button' }).click();
+    } else {
+        await page.getByRole('button', { name: 'Save & test' }).click();
+    }
     await page.waitForTimeout(1000);
 
     log('--> Refreshing the page...');
@@ -316,8 +341,14 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     await logVisibility(page, 'test_macro_value');
 
     log('--> Deleting datasource');
-    await page.getByTestId('Data source settings page Delete button').click();
-    await page.getByTestId('data-testid Confirm Modal Danger Button').click();
+
+    if (major < 10) {
+        await page.getByRole('button', { name: 'Data source settings page Delete button' }).click();
+        await page.getByRole('button', { name: 'Confirm Modal Danger Button' }).click();
+    } else {
+        await page.getByTestId('Data source settings page Delete button').click();
+        await page.getByTestId('data-testid Confirm Modal Danger Button').click();
+    }
     log('--> Datasource Deleted successfully!');
     log('-->Configuration Editor Test Completed!');
 });
