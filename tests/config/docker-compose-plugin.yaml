@@ -10,15 +10,15 @@ services:
     volumes:
       - ../../dist:/var/lib/grafana/plugins/clevercloud-warp10-datasource
       - ../../provisioning:/etc/grafana/provisioning
+      - ./warp10.conf:/opt/warp10/etc/warp10.conf
     depends_on:
-      - warp10
+      warp10:
+        condition: service_healthy
     networks:
       - warp10-net
     environment:
       - GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=clevercloud-warp10-datasource
       - WARP10_URL=http://warp10:8080
-    extra_hosts:
-      - "warp10:127.0.0.1"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/login"]
       interval: 10s
@@ -33,6 +33,11 @@ services:
       - 8081:8081
     networks:
       - warp10-net
+    healthcheck:
+      test: ["CMD", "curl", "-f", "-XPOST", "-d", "'RETURN 1'", "http://localhost:8080/api/v0/exec"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
 
 networks:
   warp10-net:
