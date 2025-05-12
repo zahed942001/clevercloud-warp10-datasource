@@ -137,13 +137,20 @@ jobs:
     needs: build
     if: ${{ needs.build.outputs.has-e2e == 'true' }}
     outputs:
-      matrix: ${{ steps.resolve-versions.outputs.matrix }}
+      matrix: ${{ steps.filter.outputs.matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Resolve Grafana E2E versions
-        id: resolve-versions
+        id: resolve
         uses: grafana/plugin-actions/e2e-version@main
+      - name: Debug matrix output
+        run: echo '${{ steps.resolve.outputs.matrix }}'
+      - name: Filter out grafana-dev using Python
+        id: filter
+        run: |
+          echo '${{ steps.resolve.outputs.matrix }}' | python3 scripts/filter_grafana_versions.py > filtered.json
+          echo "matrix=$(cat filtered.json)" >> $GITHUB_OUTPUT
 
   playwright-tests:
     needs: [resolve-versions, build]
@@ -151,8 +158,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        GRAFANA_IMAGE: ${{fromJson(needs.resolve-versions.outputs.matrix)}}
-    name: e2e test ${{ matrix.GRAFANA_IMAGE.name }}@${{ matrix.GRAFANA_IMAGE.VERSION }}
+        GRAFANA_IMAGE: ${{ fromJson(needs.resolve-versions.outputs.matrix) }}
+    name: e2e test ${{ matrix.GRAFANA_IMAGE.name }}@${{ matrix.GRAFANA_IMAGE.version }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -180,7 +187,7 @@ jobs:
       - name: Start Grafana
         run: |
           docker compose -f tests/config/docker-compose-plugin.yaml pull
-          ANONYMOUS_AUTH_ENABLED=false DEVELOPMENT=false GRAFANA_VERSION=${{ matrix.GRAFANA_IMAGE.VERSION }} GRAFANA_IMAGE=${{ matrix.GRAFANA_IMAGE.NAME }} docker compose -f tests/config/docker-compose-plugin.yaml up -d
+          ANONYMOUS_AUTH_ENABLED=false DEVELOPMENT=false GRAFANA_VERSION=${{ matrix.GRAFANA_IMAGE.version }} GRAFANA_IMAGE=${{ matrix.GRAFANA_IMAGE.name }} docker compose -f tests/config/docker-compose-plugin.yaml up -d
 
       - name: Wait for grafana server
         uses: grafana/plugin-actions/wait-for-grafana@main
@@ -206,7 +213,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
         with:
-          name: ${{ matrix.GRAFANA_IMAGE.NAME }}-v${{ matrix.GRAFANA_IMAGE.VERSION }}-${{github.run_id}}-server-log
+          name: ${{ matrix.GRAFANA_IMAGE.name }}-v${{ matrix.GRAFANA_IMAGE.version }}-${{github.run_id}}-server-log
           path: grafana-server.log
           retention-days: 5
 
