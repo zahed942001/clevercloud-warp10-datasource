@@ -24,20 +24,13 @@ services:
       retries: 6
 
   warp10:
-    image: warp10io/warp10:3.4.1-alpine
+    image: warp10io/warp10:3.5.0-alpine
     container_name: warp10
     ports:
       - 8080:8080
       - 8081:8081
-    volumes:
-      - ./warp10.conf:/opt/warp10/etc/conf.d/warp10.conf
     networks:
       - warp10-net
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8080/" ]
-      interval: 10s
-      timeout: 5s
-      retries: 6
 
 networks:
   warp10-net:
