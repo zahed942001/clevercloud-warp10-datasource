@@ -131,26 +131,17 @@ jobs:
           overwrite: true
 
   resolve-versions:
-    name: Resolve e2e images
     runs-on: ubuntu-latest
-    timeout-minutes: 3
-    needs: build
-    if: ${{ needs.build.outputs.has-e2e == 'true' }}
     outputs:
-      matrix: ${{ steps.filter.outputs.matrix }}
+      matrix: ${{ steps.resolve-versions.outputs.matrix }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Resolve Grafana E2E versions
-        id: resolve
+        id: resolve-versions
         uses: grafana/plugin-actions/e2e-version@main
-      - name: Debug matrix output
-        run: echo '${{ steps.resolve.outputs.matrix }}'
-      - name: Filter out grafana-dev using Python
-        id: filter
-        run: |
-          echo '${{ steps.resolve.outputs.matrix }}' | python3 scripts/filter_grafana_versions.py > filtered.json
-          echo "matrix=$(cat filtered.json)" >> $GITHUB_OUTPUT
+        with:
+          skip-grafana-dev-image: true
 
   playwright-tests:
     needs: [resolve-versions, build]
