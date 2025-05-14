@@ -70,7 +70,10 @@ test('Basic scenario: Create DS, Dashboard, Select Datasource, Get Warp10 Respon
     const version = await getGrafanaVersion(page);
     const major = parseInt(version.split('.')[0], 10);
     log(`--> Detected Grafana version: ${version}`);
-
+    if (major < 10) {
+        test.skip(true, 'Test skipped: Only valid for Grafana v10.0.0 or higher');
+        return;
+    }
     const basePath = major < 10
         ? '/connections/your-connections/datasources/new'
         : '/connections/datasources/new';
