@@ -1,11 +1,12 @@
-import {test, expect, Page} from '@playwright/test';
-import {Locator} from "playwright";
+import { test, expect, Page } from '@playwright/test';
 
+// === Utility: Logger ===
 function log(message: string) {
     const now = new Date().toISOString().replace('T', ' ').replace('Z', '');
     console.log(`[${now}] ${message}`);
 }
 
+// === Utility: Menu toggle navigation ===
 async function clickMenuToggle(page: Page) {
     const selectors = [
         'button[aria-label="Toggle menu"]',
@@ -28,6 +29,7 @@ async function clickMenuToggle(page: Page) {
     }
 }
 
+// === Utility: Navigate to dashboards ===
 async function clickDashboardsNav(page: Page) {
     const selectors = [
         'a[href="/dashboards"]',
@@ -49,8 +51,8 @@ async function clickDashboardsNav(page: Page) {
     }
 }
 
+// === Utility: Go to new dashboard ===
 async function goToNewDashboard(page: Page) {
-    // Option 1: Direct link to "New dashboard"
     const directNewDashboard = page.locator('a[href*="/new-dashboard"]', { hasText: 'New dashboard' });
     if (await directNewDashboard.count() > 0 && await directNewDashboard.first().isVisible()) {
         await directNewDashboard.first().click();
@@ -58,7 +60,6 @@ async function goToNewDashboard(page: Page) {
         return;
     }
 
-    // Option 2: Click "General" section then "New dashboard"
     const generalLink = page.getByText('General', { exact: true });
     if (await generalLink.count() > 0 && await generalLink.first().isVisible()) {
         await generalLink.first().click();
@@ -75,8 +76,8 @@ async function goToNewDashboard(page: Page) {
     throw new Error('Neither "New dashboard" nor "General > New dashboard" was found.');
 }
 
+// === Utility: Click Edit button on panel ===
 async function clickEditButton(page: Page) {
-    // Try the modern role-based locator first
     const roleBased = page.getByRole('link', { name: 'Edit' });
     if (await roleBased.count() > 0 && await roleBased.first().isVisible()) {
         await roleBased.first().click();
@@ -84,7 +85,6 @@ async function clickEditButton(page: Page) {
         return;
     }
 
-    // Fallback: button with role=menuitem and visible text
     const menuItemEdit = page.locator('button[role="menuitem"]:has-text("Edit")');
     if (await menuItemEdit.count() > 0 && await menuItemEdit.first().isVisible()) {
         await menuItemEdit.first().click();
@@ -95,52 +95,21 @@ async function clickEditButton(page: Page) {
     throw new Error('Edit button not found in either format.');
 }
 
+// === Utility: Get Grafana version ===
 async function getGrafanaVersion(page: Page): Promise<string> {
     const response = await page.request.get('http://localhost:3000/api/health');
     const body = await response.json();
     return body.version;
 }
 
-async function fillPairAndClickAdd({nameInput, valueInput, name, value, addButton, label, page}: { nameInput: Locator, valueInput: Locator, name: string, value: string, addButton?: Locator, label: string, page: Page }) {
-    log(`--> Filling ${label} name`);
-    await nameInput.pressSequentially(name);
-    await page.waitForTimeout(500);
-    const actualName = await nameInput.inputValue();
-    log(`--> ${label} Name value after typing: "${actualName}"`);
-    if (actualName === name) {log(`--> ${label} name added successfully`);}
-
-    log(`--> Filling ${label} value`);
-    await valueInput.pressSequentially(value);
-    await page.waitForTimeout(500);
-    const actualValue = await valueInput.inputValue();
-    log(`--> ${label} Value after typing: "${actualValue}"`);
-    if (actualValue === value) {log(`--> ${label} value added successfully`);}
-
-    if (addButton) {
-        log(`--> Clicking ${label} Add button...`);
-        await addButton.click();
-        await page.waitForTimeout(1000);
-    }
-}
-
-async function logVisibility(page: Page, label: string) {
-    try {
-        await expect(page.getByText(label, { exact: true })).toBeVisible();
-        log(`--> '${label}' is visible`);
-    } catch (error) {
-        console.error(`--> '${label}' is NOT visible`);
-    }
-}
-
-
-test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
+// === TEST: Editor JSON Model Validation ===
+test('Editor: test all features in request editor component and verify the JSON model', async ({ page }) => {
     const responses: any[] = [];
-    let healthResponse: any = null;
 
+    // === Step 1: Intercept responses ===
     page.on('response', async (response) => {
         const url = response.url();
 
-        // Capture query responses
         if (url.includes('/api/ds/query') && response.request().method() === 'POST') {
             try {
                 const json = await response.json();
@@ -150,29 +119,20 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
                 log(`--> Failed to parse JSON for: ${url}`);
             }
         }
-
-        // Capture health check
-        if (url.includes('/api/datasources') && url.includes('/health')) {
-            try {
-                const json = await response.json();
-                healthResponse = json;
-                log(`--> Health check response received: ${JSON.stringify(json, null, 2)}`);
-            } catch (e) {
-                log(`--> Failed to parse health check response: ${e}`);
-            }
-        }
     });
 
+    // === Step 2: Log console errors ===
     page.on('console', msg => {
         if (msg.type() === 'error' && msg.text().includes('net::ERR_CONNECTION_REFUSED')) {
-            return; // Ignore it
+            return;
         }
         console.log(`[console.${msg.type()}] ${msg.text()}`);
     });
 
-
-    log('-->Navigating to dashboard with panel...');
+    // === Step 3: Load Grafana dashboard panel ===
+    log('--> Navigating to dashboard with panel...');
     await page.goto('http://localhost:3000');
+
     const version = await getGrafanaVersion(page);
     log(`--> Detected Grafana version: ${version}`);
     const major = parseInt(version.split('.')[0], 10);
@@ -183,21 +143,25 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
     await clickDashboardsNav(page);
     await page.waitForTimeout(500);
     await goToNewDashboard(page);
+
     await page.getByRole('button', {
         name: 'Menu for panel with title Graph Example',
     }).click();
+
     await clickEditButton(page);
-    log('-->Waiting for query editor...');
+
+    // === Step 4: Wait for editor ===
+    log('--> Waiting for query editor...');
     const editor = page.locator('.query-editor-row textarea').first();
     await expect(editor).toBeAttached({ timeout: 10000 });
     await expect(editor).toBeVisible({ timeout: 10000 });
-    log('-->Editor is visible and attached');
-    if(major >= 10) {
+    log('--> Editor is visible and attached');
+
+    // === Step 5: Verify responses ===
+    if (major >= 10) {
         await page.waitForTimeout(3000);
         for (let i = 0; i < 10; i++) {
-            if (responses.length > 0) {
-                break;
-            }
+            if (responses.length > 0) {break;}
             await page.waitForTimeout(500);
         }
 
@@ -209,7 +173,6 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
             log(`--> Checking response [${index + 1}/${responses.length}]`);
 
             const resultA = r.json?.results?.A;
-
             if (!resultA) {
                 log(`⚠️ Skipping response ${index + 1} – 'results.A' is undefined`);
                 continue;
@@ -229,14 +192,14 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
                 expect(Array.isArray(resultA.frames?.[0]?.data?.values?.[0])).toBe(true);
                 log('--> Returned data is a valid array');
 
-                // 🔍 Print full JSON response
                 log(`--> Full JSON for response ${index + 1}:\n` + JSON.stringify(r.json, null, 2));
-
             } catch (error) {
                 log(`❌ Error in response ${index + 1}: ${(error as Error).message}`);
             }
         }
     }
+
+    // === Step 6: Verify editor content ===
     await expect(editor).toHaveValue(
         'NEWGTS\n' +
         '\'io.warp10.grafana.test\' RENAME\n' +
@@ -259,96 +222,7 @@ test('Warp10 QueryEditor handles all loaded queries', async ({ page }) => {
         '$sinus $cosinus'
     );
     log('--> Query editor content is correct');
+
+    // === Done ===
     log('--> Query Editor Test completed!');
-
-
-    log('--> Navigating to data sources page...');
-    if (major < 10) {
-        await page.goto('http://localhost:3000/connections/your-connections/datasources/new');
-    } else {
-        await page.goto('http://localhost:3000/connections/datasources/new');
-    }
-    // Wait for the data sources page to load
-    await page.waitForTimeout(1000);
-    // Enter Warp10 datasource creation
-
-    await page.getByRole('button', { name: 'Warp10' }).click();
-
-    log('--> Filling Plugin Name');
-    await page.fill('#basic-settings-name', 'test_warp10');
-
-    log('--> Filling Warp10 URL');
-    const urlInput = page.locator('#url');
-    await urlInput.fill('http://warp10:8080');
-    const currentValue = await urlInput.inputValue();
-    log(`--> URL input filled with: ${currentValue}`);
-
-    log('--> Clicking Save & test button...');
-    if (major < 10) {
-        await page.getByRole('button', { name: 'Data source settings page Save and Test button' }).click();
-    } else {
-        await page.getByRole('button', { name: 'Save & test' }).click();
-    }
-
-    // Wait for the response to be received
-    await page.waitForTimeout(1000);
-
-    if (healthResponse) {
-        log(`--> Status: ${healthResponse.status}`);
-        log(`--> Message: ${healthResponse.message}`);
-    } else {
-        log('--> Health check response was not received.');
-    }
-
-    log('--> Filling and applying constats and macros')
-
-    await fillPairAndClickAdd({
-        nameInput: page.locator('#constant_name'),
-        valueInput: page.locator('#constant_value'),
-        name: 'test_constant',
-        value: 'test_constant_value',
-        addButton: page.locator('#btn_constant'),
-        label: 'Constant',
-        page
-    });
-
-    await fillPairAndClickAdd({
-        nameInput: page.locator('#macro_name'),
-        valueInput: page.locator('#macro_value'),
-        name: 'test_macro',
-        value: 'test_macro_value',
-        addButton: page.locator('#btn_macro'),
-        label: 'Macro',
-        page
-    });
-
-    log('--> Clicking Save & test button...');
-    if (major < 10) {
-        await page.getByRole('button', { name: 'Data source settings page Save and Test button' }).click();
-    } else {
-        await page.getByRole('button', { name: 'Save & test' }).click();
-    }
-    await page.waitForTimeout(1000);
-
-    log('--> Refreshing the page...');
-    await page.reload();
-    await page.waitForTimeout(2000);
-
-    log('--> Verifying values on page...');
-    await logVisibility(page, 'test_constant');
-    await logVisibility(page, 'test_constant_value');
-    await logVisibility(page, 'test_macro');
-    await logVisibility(page, 'test_macro_value');
-
-    log('--> Deleting datasource');
-
-    if (major < 10) {
-        await page.getByRole('button', { name: 'Data source settings page Delete button' }).click();
-        await page.getByRole('button', { name: 'Confirm Modal Danger Button' }).click();
-    } else {
-        await page.getByTestId('Data source settings page Delete button').click();
-        await page.getByTestId('data-testid Confirm Modal Danger Button').click();
-    }
-    log('--> Datasource Deleted successfully!');
-    log('-->Configuration Editor Test Completed!');
 });

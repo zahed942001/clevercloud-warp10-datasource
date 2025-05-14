@@ -1,5 +1,8 @@
 #!/bin/sh
 
+# Set Grafana version globally
+export grafana_version=11.5.4
+
 ## install a warp10 instance
 docker run -d -p 8080:8080 -p 8081:8081 warp10io/warp10:3.4.1-alpine &
 
