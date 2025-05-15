@@ -14,51 +14,6 @@ function log(message: string) {
     console.log(`[${now}] ${message}`);
 }
 
-// === Utility: Menu toggle navigation ===
-async function clickMenuToggle(page: Page) {
-    const selectors = [
-        'button[aria-label="Toggle menu"]',
-        'button[aria-label="Open menu"]',
-        '#mega-menu-toggle',
-    ];
-
-    const found = await Promise.race(
-        selectors.map(selector =>
-            page.waitForSelector(selector, { state: 'visible' }).then(() => selector).catch(() => null)
-        )
-    );
-
-    if (found) {
-        await page.waitForTimeout(500);
-        await page.click(found);
-        log(`Clicked toggle menu with selector: ${found}`);
-    } else {
-        throw new Error('No menu toggle button found for known selectors');
-    }
-}
-
-// === Utility: Navigate to dashboards ===
-async function clickDashboardsNav(page: Page) {
-    const selectors = [
-        'a[href="/dashboards"]',
-        'a[data-testid="data-testid Nav menu item"] >> text=Dashboards',
-        'a:has-text("Dashboards")',
-    ];
-
-    const found = await Promise.race(
-        selectors.map(selector =>
-            page.waitForSelector(selector, { state: 'visible' }).then(() => selector).catch(() => null)
-        )
-    );
-
-    if (found) {
-        await page.click(found);
-        console.log(`Clicked Dashboards nav with selector: ${found}`);
-    } else {
-        throw new Error('No Dashboards nav item found for known selectors');
-    }
-}
-
 // === Utility: Go to new dashboard ===
 async function goToNewDashboard(page: Page) {
     const directNewDashboard = page.locator('a[href*="/new-dashboard"]', { hasText: 'New dashboard' });
@@ -143,13 +98,9 @@ test('Editor: test all features in request editor component and verify the JSON 
 
     const version = await getGrafanaVersion(page);
     log(`--> Detected Grafana version: ${version}`);
-    const major = parseInt(version.split('.')[0], 10);
 
-    await clickMenuToggle(page);
-    await page.waitForTimeout(500);
-    await page.waitForSelector('a[href="/dashboards"]', { timeout: 3000 });
-    await clickDashboardsNav(page);
-    await page.waitForTimeout(500);
+    await page.goto('http://localhost:3000/dashboards');
+    await page.waitForTimeout(1000);
     await goToNewDashboard(page);
 
     await page.getByRole('button', {
@@ -166,46 +117,46 @@ test('Editor: test all features in request editor component and verify the JSON 
     log('--> Editor is visible and attached');
 
     // === Step 5: Verify responses ===
-    if (major >= 10) {
-        await page.waitForTimeout(3000);
-        for (let i = 0; i < 10; i++) {
-            if (responses.length > 0) {break;}
-            await page.waitForTimeout(500);
+
+    await page.waitForTimeout(3000);
+    for (let i = 0; i < 10; i++) {
+        if (responses.length > 0) {break;}
+        await page.waitForTimeout(500);
+    }
+
+    expect(responses.length).toBeGreaterThan(0);
+    log(`--> ${responses.length} query response(s) captured`);
+
+    for (let index = 0; index < responses.length; index++) {
+        const r = responses[index];
+        log(`--> Checking response [${index + 1}/${responses.length}]`);
+
+        const resultA = r.json?.results?.A;
+        if (!resultA) {
+            log(`⚠️ Skipping response ${index + 1} – 'results.A' is undefined`);
+            continue;
         }
 
-        expect(responses.length).toBeGreaterThan(0);
-        log(`--> ${responses.length} query response(s) captured`);
+        try {
+            expect(r.status).toBe(200);
+            log(`--> Status 200 OK`);
 
-        for (let index = 0; index < responses.length; index++) {
-            const r = responses[index];
-            log(`--> Checking response [${index + 1}/${responses.length}]`);
+            expect(resultA.status).toBe(200);
+            log('--> Result A status is 200');
 
-            const resultA = r.json?.results?.A;
-            if (!resultA) {
-                log(`⚠️ Skipping response ${index + 1} – 'results.A' is undefined`);
-                continue;
-            }
+            const schemaName = resultA.frames?.[0]?.schema?.name;
+            log(`--> Schema name: ${schemaName}`);
+            expect(typeof schemaName).toBe('string');
 
-            try {
-                expect(r.status).toBe(200);
-                log(`--> Status 200 OK`);
+            expect(Array.isArray(resultA.frames?.[0]?.data?.values?.[0])).toBe(true);
+            log('--> Returned data is a valid array');
 
-                expect(resultA.status).toBe(200);
-                log('--> Result A status is 200');
-
-                const schemaName = resultA.frames?.[0]?.schema?.name;
-                log(`--> Schema name: ${schemaName}`);
-                expect(typeof schemaName).toBe('string');
-
-                expect(Array.isArray(resultA.frames?.[0]?.data?.values?.[0])).toBe(true);
-                log('--> Returned data is a valid array');
-
-                log(`--> Full JSON for response ${index + 1}:\n` + JSON.stringify(r.json, null, 2));
-            } catch (error) {
-                log(`❌ Error in response ${index + 1}: ${(error as Error).message}`);
-            }
+            log(`--> Full JSON for response ${index + 1}:\n` + JSON.stringify(r.json, null, 2));
+        } catch (error) {
+            log(`❌ Error in response ${index + 1}: ${(error as Error).message}`);
         }
     }
+
 
     // === Step 6: Verify editor content ===
     await expect(editor).toHaveValue(

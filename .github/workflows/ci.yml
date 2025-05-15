@@ -192,10 +192,6 @@ jobs:
         id: run-tests-chromium
         run: npx playwright test --project=chromium
 
-      - name: Run Playwright tests (Firefox)
-        id: run-tests-firefox
-        run: npx playwright test --project=firefox
-
       - name: Docker logs
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
         run: |

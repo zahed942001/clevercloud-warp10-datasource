@@ -17,9 +17,30 @@ function log(message: string) {
     console.log(`[${now}] ${message}`);
 }
 
+// Click Add Panel Handle All Versions
+async function clickAddPanelButton(page: Page) {
+    const selectors = [
+        '[data-testid="data-testid Create new panel button"]',
+        '[data-testid="add-panel-button"]',
+        'button[aria-label="Add new panel"]',
+        'button:has-text("Add visualization")',
+    ];
+
+    for (const sel of selectors) {
+        const el = await page.$(sel);
+        if (el) {
+            await el.click();
+            console.log(`✅ Clicked Add Panel button with selector: ${sel}`);
+            return;
+        }
+    }
+
+    throw new Error('❌ Could not find "Add Panel" button for any known selector or Grafana version.');
+}
+
 async function createNewDashboardAndSelectWarp10(page: Page) {
     //Click "Add visualization"
-    await page.getByTestId('data-testid Create new panel button').click();
+    await clickAddPanelButton(page);
     await page.waitForTimeout(500);
     console.log('--> Clicked "Add visualization"');
 
@@ -69,12 +90,7 @@ test('Warp10 Request Test: response types, formatting, macros, nulls, timestamps
 
     const version = await getGrafanaVersion(page);
     log(`--> Detected Grafana version: ${version}`);
-    const major = parseInt(version.split('.')[0], 10);
 
-    if (major < 10) {
-        test.skip(true, 'Test skipped: Only valid for Grafana v10.0.0 or higher');
-        return;
-    }
     await page.goto("http://localhost:3000/dashboard/new");
     await page.waitForTimeout(1000);
 

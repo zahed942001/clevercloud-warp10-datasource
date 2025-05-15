@@ -22,6 +22,27 @@ async function getGrafanaVersion(page: Page): Promise<string> {
     return body.version;
 }
 
+// Click Add Panel Handle All Versions
+async function clickAddPanelButton(page: Page) {
+    const selectors = [
+        '[data-testid="data-testid Create new panel button"]',
+        '[data-testid="add-panel-button"]',
+        'button[aria-label="Add new panel"]',
+        'button:has-text("Add visualization")',
+    ];
+
+    for (const sel of selectors) {
+        const el = await page.$(sel);
+        if (el) {
+            await el.click();
+            console.log(` Clicked Add Panel button with selector: ${sel}`);
+            return;
+        }
+    }
+
+    throw new Error(' Could not find "Add Panel" button for any known selector or Grafana version.');
+}
+
 // Final validation: logs last captured /api/ds/query response
 async function FinalTestValidation(responses: Array<{ url: string; json: any; status: number }>) {
     if (responses.length > 0) {
@@ -77,31 +98,17 @@ test('Basic scenario: Create DS, Dashboard, Select Datasource, Get Warp10 Respon
 
     // Detect Grafana version and setup paths/buttons accordingly
     const version = await getGrafanaVersion(page);
-    const major = parseInt(version.split('.')[0], 10);
     log(`--> Detected Grafana version: ${version}`);
-    if (major < 10) {
-        test.skip(true, 'Test skipped: Only valid for Grafana v10.0.0 or higher');
-        return;
-    }
-    const basePath = major < 10
-        ? '/connections/your-connections/datasources/new'
-        : '/connections/datasources/new';
 
-    const saveButtonName = major < 10
-        ? 'Data source settings page Save and Test button'
-        : 'Save & test';
+    const basePath = '/connections/datasources/new';
 
-    const myDsPath = major < 10
-        ? '/connections/your-connections/datasources'
-        : '/connections/datasources';
+    const saveButtonName = 'Save & test';
 
-    const deleteButton = major < 10
-        ? page.getByRole('button', { name: 'Data source settings page Delete button' })
-        : page.getByTestId('Data source settings page Delete button');
+    const myDsPath = '/connections/datasources';
 
-    const confirmButton = major < 10
-        ? page.getByRole('button', { name: 'Confirm Modal Danger Button' })
-        : page.getByTestId('data-testid Confirm Modal Danger Button');
+    const deleteButton = page.getByTestId('Data source settings page Delete button');
+
+    const confirmButton = page.getByTestId('data-testid Confirm Modal Danger Button');
 
     // === Step 1: Create datasource ===
     log('--> Creating new Warp10 datasource');
@@ -134,7 +141,7 @@ test('Basic scenario: Create DS, Dashboard, Select Datasource, Get Warp10 Respon
     await page.waitForTimeout(500);
 
     log('--> Creating new panel');
-    await page.getByTestId('data-testid Create new panel button').click();
+    await clickAddPanelButton(page);
     await page.waitForTimeout(500);
 
     log('--> Selecting created datasource');

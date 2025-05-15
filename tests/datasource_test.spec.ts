@@ -96,23 +96,14 @@ test('Datasource: test all fields in datasource config + healthcheck', async ({ 
     // === Step 1: Get Grafana version and define constants ===
     const version = await getGrafanaVersion(page);
     log(`--> Detected Grafana version: ${version}`);
-    const major = parseInt(version.split('.')[0], 10);
 
-    const dsPath = major < 10
-        ? '/connections/your-connections/datasources/new'
-        : '/connections/datasources/new';
+    const dsPath = '/connections/datasources/new';
 
-    const saveButton = major < 10
-        ? { type: 'role', name: 'Data source settings page Save and Test button' }
-        : { type: 'role', name: 'Save & test' };
+    const saveButton = { type: 'role', name: 'Save & test' };
 
-    const deleteButton = major < 10
-        ? { type: 'role', name: 'Data source settings page Delete button' }
-        : { type: 'testId', name: 'Data source settings page Delete button' };
+    const deleteButton = { type: 'testId', name: 'Data source settings page Delete button' };
 
-    const confirmButton = major < 10
-        ? { type: 'role', name: 'Confirm Modal Danger Button' }
-        : { type: 'testId', name: 'data-testid Confirm Modal Danger Button' };
+    const confirmButton = { type: 'testId', name: 'data-testid Confirm Modal Danger Button' };
 
     // === Step 2: Create datasource ===
     log('--> Navigating to data sources page...');
