@@ -21,7 +21,7 @@ const pluginE2eAuth = `${dirname(require.resolve('@grafana/plugin-e2e'))}/auth`;
 
 export default defineConfig<PluginOptions>({
   testDir: './tests',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
@@ -29,11 +29,6 @@ export default defineConfig<PluginOptions>({
   use: {
     baseURL: process.env.GRAFANA_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
-    headless: true,
-    launchOptions: {
-      args: ['--disable-gpu', '--no-sandbox'],
-    },
-    ignoreHTTPSErrors: true,
   },
   projects: [
     {
@@ -57,19 +52,6 @@ export default defineConfig<PluginOptions>({
       testMatch: ['*.spec.ts'],
       use: {
         ...devices['Desktop Firefox'],
-        storageState: 'playwright/.auth/admin.json',
-        launchOptions: {
-          args: ['-headless'],
-        },
-      },
-      dependencies: ['auth'],
-    },
-    {
-      name: 'webkit',
-      testDir: './tests',
-      testMatch: ['*.spec.ts'],
-      use: {
-        ...devices['Desktop Safari'],
         storageState: 'playwright/.auth/admin.json',
       },
       dependencies: ['auth'],

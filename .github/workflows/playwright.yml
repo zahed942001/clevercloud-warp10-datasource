@@ -73,8 +73,11 @@ jobs:
           docker compose -f tests/config/docker-compose-plugin.yaml logs
           exit 1
 
-      - name: Run Playwright tests
-        run: npx playwright test
+      - name: Run Playwright tests (Chromium)
+        run: npx playwright test --project=chromium
+
+      - name: Run Playwright tests (Firefox)
+        run: npx playwright test --project=firefox
 
       - name: Shutdown services
         if: always()
