@@ -29,6 +29,11 @@ export default defineConfig<PluginOptions>({
   use: {
     baseURL: process.env.GRAFANA_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
+    headless: true,
+    launchOptions: {
+      args: ['--disable-gpu', '--no-sandbox'],
+    },
+    ignoreHTTPSErrors: true,
   },
   projects: [
     {
@@ -53,6 +58,9 @@ export default defineConfig<PluginOptions>({
       use: {
         ...devices['Desktop Firefox'],
         storageState: 'playwright/.auth/admin.json',
+        launchOptions: {
+          args: ['-headless'],
+        },
       },
       dependencies: ['auth'],
     },
