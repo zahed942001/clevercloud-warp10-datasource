@@ -188,9 +188,13 @@ jobs:
       - name: Install Playwright Browsers
         run: npm exec playwright install chromium --with-deps
 
-      - name: Run Playwright tests (chromium only)
-        id: run-tests
+      - name: Run Playwright tests (chromium)
+        id: run-tests-chromium
         run: npx playwright test --project=chromium
+
+      - name: Run Playwright tests (Firefox)
+        id: run-tests-firefox
+        run: npx playwright test --project=firefox
 
       - name: Docker logs
         if: ${{ always() && steps.run-tests.outcome == 'failure' }}
