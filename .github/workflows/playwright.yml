@@ -26,6 +26,9 @@ jobs:
       - name: Build plugin
         run: npm run build
 
+      - name: Clear Playwright browser cache
+        run: rm -rf ~/.cache/ms-playwright
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
 
