@@ -1,3 +1,12 @@
+/**
+ * @file scenario.spec.ts
+ * @description End-to-end test for a basic usage scenario.
+ * This test covers the full flow of creating a Warp10 datasource, creating a dashboard,
+ * selecting the datasource, injecting a basic query, and validating a successful response.
+ *
+ * Scope: scenario (integration)
+ * Grafana version: only runs on v10.0.0 or higher (handled by ignoring versions < 10)
+ */
 import { test, Page } from '@playwright/test';
 
 // Logging helper

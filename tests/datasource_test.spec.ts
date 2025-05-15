@@ -1,3 +1,11 @@
+/**
+ * @file datasource_test.spec.ts
+ * @description Unit-level tests for the Warp10 datasource configuration component.
+ * Validates behavior of form fields, save & test button, constants/macros config,
+ * and backend healthcheck status.
+ *
+ * Scope: datasource (configuration UI + backend health)
+ */
 import { test, expect, Page } from '@playwright/test';
 import { Locator } from "playwright";
 

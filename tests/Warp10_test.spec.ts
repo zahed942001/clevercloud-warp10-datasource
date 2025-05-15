@@ -1,3 +1,15 @@
+/**
+ * @file Warp10_test.spec.ts
+ * @description Comprehensive tests for Warp10 request handling and response formats.
+ * Includes checks for:
+ *  - Scalar, array, and GTS responses (flat and nested)
+ *  - Value types: int, float, string, boolean
+ *  - Partial/empty responses (null-like behavior)
+ *  - Timestamp behavior (microseconds input, milliseconds output)
+ *  - Warp10 macro parsing (`<% ... %>`)
+ *
+ * Scope: requests (data layer validation)
+ */
 import { test, expect, Page } from '@playwright/test';
 // === Utility: Logger ===
 function log(message: string) {

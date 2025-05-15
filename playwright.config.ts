@@ -1,3 +1,18 @@
+/**
+ * @file playwright.config.ts
+ * @description Global Playwright test configuration for Grafana Warp10 plugin testing.
+ *
+ * This config:
+ * - Defines test directories and test match patterns
+ * - Enables multiple browser projects (Chromium, Firefox, WebKit)
+ * - Integrates authentication via @grafana/plugin-e2e
+ * - Enables parallelism, retries (CI), HTML reporting, and baseURL support
+ *
+ * Notes:
+ * - The 'auth' project runs the login scenario first and stores credentials
+ * - All other projects depend on 'auth' and reuse the stored state
+ * - Test files should be placed in `./tests` directory and use `.spec.ts` extension
+ */
 import type { PluginOptions } from '@grafana/plugin-e2e';
 import { defineConfig, devices } from '@playwright/test';
 import { dirname } from 'node:path';
@@ -27,6 +42,26 @@ export default defineConfig<PluginOptions>({
       testMatch: ['*.spec.ts'],
       use: {
         ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/admin.json',
+      },
+      dependencies: ['auth'],
+    },
+    {
+      name: 'firefox',
+      testDir: './tests',
+      testMatch: ['*.spec.ts'],
+      use: {
+        ...devices['Desktop Firefox'],
+        storageState: 'playwright/.auth/admin.json',
+      },
+      dependencies: ['auth'],
+    },
+    {
+      name: 'webkit',
+      testDir: './tests',
+      testMatch: ['*.spec.ts'],
+      use: {
+        ...devices['Desktop Safari'],
         storageState: 'playwright/.auth/admin.json',
       },
       dependencies: ['auth'],

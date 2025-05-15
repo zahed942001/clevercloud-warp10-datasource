@@ -1,3 +1,11 @@
+/**
+ * @file editor_test.spec.ts
+ * @description Test for the Warp10 query editor component.
+ * Verifies visibility, correct handling of queries, and correct internal JSON model output.
+ * Also validates macro parsing with `<% ... %>` blocks.
+ *
+ * Scope: editor (query editor rendering and behavior)
+ */
 import { test, expect, Page } from '@playwright/test';
 
 // === Utility: Logger ===
