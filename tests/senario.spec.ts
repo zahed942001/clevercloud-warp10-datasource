@@ -5,7 +5,6 @@
  * selecting the datasource, injecting a basic query, and validating a successful response.
  *
  * Scope: scenario (integration)
- * Grafana version: only runs on v10.0.0 or higher (handled by ignoring versions < 10)
  */
 import { test, Page } from '@playwright/test';
 
@@ -51,9 +50,9 @@ async function FinalTestValidation(responses: Array<{ url: string; json: any; st
         console.log(JSON.stringify(lastResponse.json, null, 2));
 
         if (lastResponse.status === 200) {
-            log('✅ Test completed successfully');
+            log('--> Test completed successfully');
         } else {
-            log(`❌ Test failed — Last response status: ${lastResponse.status}`);
+            log(`--> Test failed — Last response status: ${lastResponse.status}`);
         }
     } else {
         log('--> No /api/ds/query response captured.');
@@ -130,9 +129,9 @@ test('Basic scenario: Create DS, Dashboard, Select Datasource, Get Warp10 Respon
     await page.waitForTimeout(1000);
 
     if (healthResponse) {
-        log(`--> ✅ Health check passed: ${healthResponse.message}`);
+        log(`--> Health check passed: ${healthResponse.message}`);
     } else {
-        log('--> ⚠️ Health check response was not received.');
+        log('--> Health check response was not received.');
     }
 
     // === Step 2: Build dashboard ===
@@ -168,7 +167,7 @@ test('Basic scenario: Create DS, Dashboard, Select Datasource, Get Warp10 Respon
     log('--> Deleting datasource...');
     await deleteButton.click();
     await confirmButton.click();
-    log('--> ✅ Datasource deleted successfully');
+    log('--> Datasource deleted successfully');
 
-    log('--> 🎯 Scenario test completed!');
+    log('--> Scenario test completed!');
 });

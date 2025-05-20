@@ -23,9 +23,7 @@ async function getGrafanaVersion(page: Page): Promise<string> {
 }
 
 // === Utility: Fill key-value pair for constants/macros ===
-async function fillPairAndClickAdd({ nameInput, valueInput, name, value, addButton, label, page }: {
-    nameInput: Locator, valueInput: Locator, name: string, value: string, addButton?: Locator, label: string, page: Page
-}) {
+async function fillPairAndClickAdd({ nameInput, valueInput, name, value, addButton, label, page }: { nameInput: Locator, valueInput: Locator, name: string, value: string, addButton?: Locator, label: string, page: Page }) {
     log(`--> Filling ${label} name`);
     await nameInput.pressSequentially(name);
     await page.waitForTimeout(500);
@@ -115,6 +113,21 @@ test('Datasource: test all fields in datasource config + healthcheck', async ({ 
     log('--> Filling Plugin Name');
     await page.fill('#basic-settings-name', 'test_warp10');
 
+    log('--> Testing misconfiguration: setting an invalid Warp10 URL');
+    const urlInputInvalid = page.locator('#url');
+    await urlInputInvalid.fill('http://localhost:9999');
+    log('--> Attempting to save and test datasource with invalid URL...');
+    if (saveButton.type === 'role') {
+        await page.getByRole('button', { name: saveButton.name }).click();
+    } else {
+        await page.getByTestId(saveButton.name).click();
+    }
+    const alertSelector = page.locator('[data-testid="data-testid Alert info"]');
+    await expect(alertSelector).toBeVisible({ timeout: 3000 });
+    const alertText = await alertSelector.textContent();
+    expect(alertText).toContain('connect: connection refused');
+
+
     log('--> Filling Warp10 URL');
     const urlInput = page.locator('#url');
     await urlInput.fill('http://warp10:8080');
@@ -131,9 +144,9 @@ test('Datasource: test all fields in datasource config + healthcheck', async ({ 
     await page.waitForTimeout(1000);
 
     if (healthResponse) {
-        log(`--> ✅ Health check passed with status: ${healthResponse.status} — ${healthResponse.message}`);
+        log(`--> Health check passed with status: ${healthResponse.status} — ${healthResponse.message}`);
     } else {
-        log('--> ⚠️ Health check response was not received.');
+        log('--> Health check response was not received.');
     }
 
     // === Step 3: Test constants/macros addition ===
@@ -192,6 +205,6 @@ test('Datasource: test all fields in datasource config + healthcheck', async ({ 
         await page.getByTestId(confirmButton.name).click();
     }
 
-    log('--> ✅ Datasource deleted successfully');
-    log('--> 🎯 Datasource configuration test completed!');
+    log('--> Datasource deleted successfully');
+    log('--> Datasource configuration test completed!');
 });
