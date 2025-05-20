@@ -6,7 +6,7 @@
  *
  * Scope: scenario (integration)
  */
-import { test, Page } from '@playwright/test';
+import {test, Page, expect} from '@playwright/test';
 
 // Logging helper
 function log(message: string) {
@@ -101,6 +101,8 @@ test('Basic scenario: Create DS, Dashboard, Select Datasource, Get Warp10 Respon
 
     const basePath = '/connections/datasources/new';
 
+    const saveButton = { type: 'role', name: 'Save & test' };
+
     const saveButtonName = 'Save & test';
 
     const myDsPath = '/connections/datasources';
@@ -118,6 +120,25 @@ test('Basic scenario: Create DS, Dashboard, Select Datasource, Get Warp10 Respon
     // Fill datasource config
     log('--> Filling datasource config');
     await page.fill('#basic-settings-name', 'test_warp10');
+
+    // Fill invalid URL first and test error
+    log('--> Attempting to save and test datasource with invalid URL...');
+    const urlInputInvalid = page.locator('#url');
+    await urlInputInvalid.fill('http://localhost:9999');
+    log('--> Attempting to save and test datasource with invalid URL...');
+    if (saveButton.type === 'role') {
+        await page.getByRole('button', { name: saveButton.name }).click();
+    } else {
+        await page.getByTestId(saveButton.name).click();
+    }
+    const alertSelector = page.locator('[data-testid="data-testid Alert info"]');
+    await expect(alertSelector).toBeVisible({ timeout: 3000 });
+    const alertText = await alertSelector.textContent();
+    expect(alertText).toContain('connect: connection refused');
+
+
+    log('--> Filling Warp10 URL 8080');
+    // Correct URL for the actual test run
     const urlInput = page.locator('#url');
     await urlInput.fill('http://warp10:8080');
     const currentValue = await urlInput.inputValue();
@@ -125,6 +146,8 @@ test('Basic scenario: Create DS, Dashboard, Select Datasource, Get Warp10 Respon
 
     // Save and test
     log('--> Saving and testing datasource...');
+    await page.waitForTimeout(1000);
+
     await page.getByRole('button', { name: saveButtonName }).click();
     await page.waitForTimeout(1000);
 

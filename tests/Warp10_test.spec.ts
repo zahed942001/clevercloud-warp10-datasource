@@ -17,7 +17,7 @@ function log(message: string) {
     console.log(`[${now}] ${message}`);
 }
 
-// Click Add Panel Handle All Versions
+// Click Add Panel /Handle All Versions/
 async function clickAddPanelButton(page: Page) {
     const selectors = [
         '[data-testid="data-testid Create new panel button"]',
@@ -30,7 +30,7 @@ async function clickAddPanelButton(page: Page) {
         const el = await page.$(sel);
         if (el) {
             await el.click();
-            console.log(`✅ Clicked Add Panel button with selector: ${sel}`);
+            console.log(`--> Clicked Add Panel button with selector: ${sel}`);
             return;
         }
     }
@@ -260,6 +260,6 @@ $scalar
         expect(Array.isArray(arr)).toBe(true);
         log(`--> Field ${i + 1} contains ${arr.length} value(s)`);
     });
-    log('✅ Request test passed with formatting, types, and macro support');
+    log('--> Request test passed with formatting, types, and macro support');
 
 });
