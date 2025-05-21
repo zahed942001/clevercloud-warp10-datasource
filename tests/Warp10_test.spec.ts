@@ -206,30 +206,9 @@ $withData NOW NaN NaN NaN 123 ADDVALUE
     expect(values2[1].length).toBe(0);
 
     log('--> Empty GTS correctly returned with 0 datapoints (null-like behavior)');
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    log('--> Testing macro block parsing');
-    await editor.fill(`
-<% 'macro-test' STORE %>
-NEWGTS 'macro' STORE
-$macro NOW NaN NaN NaN 1 ADDVALUE
-$macro
-`);
-    await page.getByTestId('data-testid RefreshPicker run button').click();
-    await page.waitForTimeout(2000);
-
-    const macroResp = responses.at(-1);
-    expect(macroResp).toBeDefined();
-    expect(macroResp.status).toBe(200);
-
-    const rawQuery = macroResp.json?.results?.A?.meta?.executedQuery;
-    if (rawQuery) {
-        expect(rawQuery).toContain('<%');
-        log('--> Macro block successfully passed to backend');
-    } else {
-        log('⚠️ Could not retrieve rawQuery from meta; skipping macro block assertion');
-    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     log('--> Testing scalar response');
     await editor.fill(`
 NEWGTS 'scalar' STORE

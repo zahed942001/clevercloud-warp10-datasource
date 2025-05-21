@@ -5,7 +5,6 @@
 We no longer use Cypress — Playwright is the **officially supported framework** with the Grafana Plugin SDK. These tests are designed to **run both locally** and in **CI environments** (GitHub Actions).
 
 ---
-
 ## Testing Goals
 
 - Provide confidence while supporting **multiple Grafana versions**
@@ -15,6 +14,9 @@ We no longer use Cypress — Playwright is the **officially supported framework*
 ---
 
 ## How to Run Locally (With UI Only)
+> **Supported Browsers:**
+> - All tests are validated on **Chromium** and **Firefox**.
+> - **Safari (Webkit)** is explicitly **not supported** due to recurring instability in both local and CI environments.
 
 ### 1. Start Local Stack
 
@@ -67,6 +69,7 @@ warp.token.mytoken = {
 #### `datasource_test.spec.ts` (Datasource Component)
 #### `editor_test.spec.ts` (Editor Component)
 #### `Warp10_test.spec.ts` (Regression/Test Bed)
+#### `macros_test.spec.ts` (Macro Parsing)
 
 ---
 
@@ -213,6 +216,31 @@ It is intended as both a regression suite and a test bed for data layer validati
 6. **Partial and Nested Responses**
    - Create responses containing both GTS with and without data, and nested data structures if supported.
    - Validate correct separation between filled and empty series, and proper handling of nested data (if applicable).
+---
 
-    
+## Macros: WarpScript Macro Parsing, Payload Transmission & Error Handling
+
+This scenario ensures that macros written with `<% ... %>` blocks are:
+
+- Correctly injected into the editor and accepted as valid input
+- Properly included, unescaped, in the outgoing JSON payload to the backend
+- Appropriately flagged if invalid, with clear error propagation
+
+### Steps
+
+1. **Macro Injection and Payload Validation**
+    - Inject a valid WarpScript macro using `<% ... %>` in the query editor.
+    - Trigger query execution and intercept the outgoing `/api/ds/query` POST request.
+    - Assert that the outgoing request payload includes the macro code, with no unexpected escaping or transformation.
+
+2. **Negative Test: Invalid Macro Handling**
+    - Inject a malformed macro (for example, a syntax error in the macro body).
+    - Trigger the query and intercept the backend response.
+    - Assert that the backend returns a clear error message indicating macro parsing or execution failure.
+    - Confirm that the error status is not `200 OK`.
+
+3. **Editor and Model Integrity**
+    - For each test, confirm that the editor value matches the outgoing payload content exactly.
+    - Validate that multiline and indented macros are handled correctly and maintain structure in transmission.
+
 ---

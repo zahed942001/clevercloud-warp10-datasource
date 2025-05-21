@@ -3,6 +3,7 @@
  * @description End-to-end test for a basic usage scenario.
  * This test covers the full flow of creating a Warp10 datasource, creating a dashboard,
  * selecting the datasource, injecting a basic query, and validating a successful response.
+ * sometimes delays added are extremely important for the page to load as it should so we shouldn't try to modify or decrease it
  *
  * Scope: scenario (integration)
  */
