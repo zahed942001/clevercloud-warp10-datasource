@@ -30,10 +30,17 @@ jobs:
           export GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS=clevercloud-warp10-datasource
           chmod +x release/config/build.sh
           ./release/config/build.sh
+          echo "debug ---"
+          pwd
+          ls -lah
 
       - name: Build Docker image from built Grafana folder
         run: |
           docker build -t grafana-custom -f release/config/Dockerfile.grafana .
+          echo "debug ---"
+          pwd
+          ls -lah
+          
 
       - name: Tag Docker image for GitHub Container Registry
         run: |
