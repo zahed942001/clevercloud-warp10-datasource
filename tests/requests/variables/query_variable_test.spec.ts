@@ -49,10 +49,6 @@ test('Single variable substitution (Query type)', async ({ page }) => {
   expect(expr).toContain(`'30' 'queryval' STORE`);
   log('--> OK: Correct query variable value storage found in expr');
 
-  log(`--> Asserting expr contains "$queryval"`);
-  expect(expr).toContain(`$queryval`);
-  log('--> OK: Variable reference "$queryval" found in expr');
-
   log('--> Single variable substitution verified');
   await deleteDatasource(page, dsName);
   await cleanupDashboard(page, dashboardTitle);

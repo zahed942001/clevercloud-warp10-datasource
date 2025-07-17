@@ -78,6 +78,7 @@ warp.token.mytoken = {
 #### `healthCheck_test.spec.ts` (Datasource Healthcheck/Access Mode)
 #### `custom_multi_variable_test.spec.ts` (Custom Multi-Value Variable Functionality) 
 #### `editor_json_model_test.spec.ts` (Editor JSON Model Verification)
+#### `variables_test.spec.ts` (UI to backend injection)
 
 ---
 ## Tests Folder Structure
@@ -89,38 +90,39 @@ warp.token.mytoken = {
 
 - tests
   - __config__
-    - [docker-compose-plugin.yaml](tests/config/docker-compose-plugin.yaml)
+    - [docker-compose-plugin.yaml](../tests/config/docker-compose-plugin.yaml)
     - __grafana_volumes__
       - __provisioning__
         - __dashboards__
-          - [dashboard.yml](tests/config/grafana_volumes/provisioning/dashboards/dashboard.yml)
-          - [test_dashboard.json](tests/config/grafana_volumes/provisioning/dashboards/test_dashboard.json)
+          - [dashboard.yml](../tests/config/grafana_volumes/provisioning/dashboards/dashboard.yml)
+          - [test_dashboard.json](../tests/config/grafana_volumes/provisioning/dashboards/test_dashboard.json)
         - __datasources__
-          - [datasources.yml](tests/config/grafana_volumes/provisioning/datasources/datasources.yml)
-          - [warp10.conf](tests/config/warp10.conf)
+          - [datasources.yml](../tests/config/grafana_volumes/provisioning/datasources/datasources.yml)
+          - [warp10.conf](../tests/config/warp10.conf)
   - __datasource__
-    - [datasource_test.spec.ts](tests/datasource/datasource_test.spec.ts)
+    - [datasource_test.spec.ts](../tests/datasource/datasource_test.spec.ts)
   - __health__
-    - [healthCheck_test.spec.ts](tests/health/healthCheck_test.spec.ts)
+    - [healthCheck_test.spec.ts](../tests/health/healthCheck_test.spec.ts)
   - __editor__
-    - [editor_test.spec.ts](tests/editor/editor_test.spec.ts)
-    - [editor_json_model_test.spec.ts](tests/editor/editor_json_model_test.spec.ts)
+    - [editor_test.spec.ts](../tests/editor/editor_test.spec.ts)
+    - [editor_json_model_test.spec.ts](../tests/editor/editor_json_model_test.spec.ts)
   - __requests__
     - __features__
-      - [constant_invalid_test.spec.ts](tests/requests/features/constant_invalid_test.spec.ts)
-      - [constant_valid_test.spec.ts](tests/requests/features/constant_valid_test.spec.ts)
-      - [macro_test.spec.ts](tests/requests/features/macro_test.spec.ts)
+      - [constant_invalid_test.spec.ts](../tests/requests/features/constant_invalid_test.spec.ts)
+      - [constant_valid_test.spec.ts](../tests/requests/features/constant_valid_test.spec.ts)
+      - [macro_test.spec.ts](../tests/requests/features/macro_test.spec.ts)
     - __types__
-      - [type_test.spec.ts](tests/requests/types/type_test.spec.ts)
+      - [type_test.spec.ts](../tests/requests/types/type_test.spec.ts)
     - __variables__
-       - [const_variable_test.spec.ts](tests/requests/variables/const_variable_test.spec.ts)
-       - [interval_variable_test.spec.ts](tests/requests/variables/interval_variable_test.spec.ts)
-       - [query_variable_test.spec.ts](tests/requests/variables/query_variable_test.spec.ts)
-       - [custom_multi_variable_test.spec.ts](tests/requests/variables/custom_multi_variable_test.spec.ts)
-    - __scenario_
-       - [senario.spec.ts](tests/scenario/senario.spec.ts)
-    - [utils.ts](tests/utils.ts)
-
+       - [const_variable_test.spec.ts](../tests/requests/variables/const_variable_test.spec.ts)
+       - [interval_variable_test.spec.ts](../ttests/requests/variables/interval_variable_test.spec.ts)
+       - [query_variable_test.spec.ts](../tests/requests/variables/query_variable_test.spec.ts)
+       - [custom_multi_variable_test.spec.ts](../tests/requests/variables/custom_multi_variable_test.spec.ts)
+  - __scenario__
+      - [senario.spec.ts](../tests/senario/senario.spec.ts)
+  - __vars__
+      - [variables_test.spec.ts](../tests/vars/variables_test.spec.ts)
+  - [utils.ts](../tests/utils.ts)
 
 </details>
 
@@ -510,5 +512,24 @@ This scenario validates the **Warp10 query editor’s behavior** in Grafana, ens
 6. **Cleanup**
     - Discard or delete the test panel/dashboard to leave the environment clean.
 
+---
 
+## Variable injection, end-to-end propagation, backend data validation.
 
+This scenario validates that Grafana dashboard templating variables are correctly injected from UI controls,
+propagated through the query editor, and returned in the backend response correctly.
+
+### Steps:
+
+1. **Dashboard Rendering and Editor Activation**
+     - Navigate to the dashboard and activate the "Table Example" query editor.
+     - Assert editor is attached and visible.
+
+2. **Templating Variable Propagation**
+     - Trigger query execution, intercept /api/ds/query POST responses.
+     - Identify the response matching the expected variable-injected data frame.
+
+3. **Backend Response & Variable Value Validation**
+    - Assert schema correctness and log all column values.
+    - Check that data values match the injected dashboard variable values ("b b", "a", "typedValue", "my_constant_value").
+    - Confirm variable values propagate end-to-end from UI to backend response.

@@ -39,11 +39,7 @@ test('Interval variable substitution works', async ({ page }) => {
   const expr = payload.queries[0].expr;
 
   // Assert variable name is in the query (the actual value will depend on Grafana's selection)
-  log(`--> Asserting that expr contains variable name "$myInterval"`);
-  expect(expr).toContain('$myInterval');
-  log('--> OK: Interval variable "$myInterval" used in query expr');
-
-  log(`--> Asserting expr contains "[ '1m' ] 'myInterval_list' STORE"`);
+  log(`--> Asserting expr contains interval list storage for '1m'`);
   expect(expr).toContain(`[ '1m' ] 'myInterval_list' STORE`);
   log('--> OK: Correct interval list storage found in expr');
 
@@ -51,8 +47,8 @@ test('Interval variable substitution works', async ({ page }) => {
   expect(expr).toContain(`'1m' 'myInterval' STORE`);
   log('--> OK: Correct interval value storage found in expr');
 
-  log(`--> Asserting expr contains "$myInterval 'intervalValue' STORE $intervalValue"`);
-  expect(expr).toContain(`$myInterval 'intervalValue' STORE $intervalValue`);
+  log(`--> Asserting expr contains "1m 'intervalValue' STORE $intervalValue"`);
+  expect(expr).toContain(`1m 'intervalValue' STORE $intervalValue`);
   log('--> OK: Interval variable value is stored and used as expected in expr');
 
   await deleteDatasource(page, dsName);

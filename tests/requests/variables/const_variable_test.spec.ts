@@ -67,8 +67,8 @@ test('Single constant substitution (Datasource constant)', async ({ page }) => {
   expect(expr).toContain(`'${constValue}' '${constName}' STORE`);
   log('--> OK: Correct value storage line found in expr');
 
-  log(`--> Asserting expr contains "$${constName} TOLONG 20 +"`);
-  expect(expr).toContain(`$${constName} TOLONG 20 +`);
+  log(`--> Asserting expr contains "${constValue} TOLONG 20 +"`);
+  expect(expr).toContain(`${constValue} TOLONG 20 +`);
   log('--> OK: Final usage of variable in expr is correct');
 
   log('--> Verified backend response value is 62');
