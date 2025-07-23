@@ -79,6 +79,7 @@ warp.token.mytoken = {
 #### `custom_multi_variable_test.spec.ts` (Custom Multi-Value Variable Functionality) 
 #### `editor_json_model_test.spec.ts` (Editor JSON Model Verification)
 #### `variables_test.spec.ts` (UI to backend injection)
+#### `repeated_panel_test.spec.ts` (Repeated variable panel functionality and frontend/backend verification)
 
 ---
 ## Tests Folder Structure
@@ -120,8 +121,10 @@ warp.token.mytoken = {
        - [custom_multi_variable_test.spec.ts](../tests/requests/variables/custom_multi_variable_test.spec.ts)
   - __scenario__
       - [senario.spec.ts](../tests/senario/senario.spec.ts)
-  - __vars__
-      - [variables_test.spec.ts](../tests/vars/variables_test.spec.ts)
+  - __repeated_vars__
+      - [variables_test.spec.ts](../tests/repeated_vars/variables_test.spec.ts)
+      - [repeated_panel_test.spec.ts](../tests/repeated_vars/repeated_panel_test.spec.ts)
+
   - [utils.ts](../tests/utils.ts)
 
 </details>
@@ -533,3 +536,27 @@ propagated through the query editor, and returned in the backend response correc
     - Assert schema correctness and log all column values.
     - Check that data values match the injected dashboard variable values ("b b", "a", "typedValue", "my_constant_value").
     - Confirm variable values propagate end-to-end from UI to backend response.
+
+---
+
+## Repeated variable panels: UI rendering and backend validation
+
+This scenario validates that for each value of a repeated dashboard variable 
+(server_example with values server1 and server2), all expected data series 
+are rendered in the UI and returned in the backend /api/ds/query responses.
+
+### Steps:
+
+1. **Dashboard Rendering and Variable Selection**
+    - Navigate to the dashboard containing panels repeated by the variable server_example.
+    - Assert that expected panels/series for each value ("server1", "server2") are present in the dashboard.
+
+2. **Series Name Verification in UI**
+    - For each variable value, assert that the expected series (io.warp10.grafana.test{func=sinus,server_example=server1} and ...server2) are visible in the panel legend or visualization.
+
+3. **Backend API Response Interception & Validation**
+    - Intercept all POST /api/ds/query requests triggered by the dashboard.
+    - Assert that the backend returns a frame for each expected series name.
+
+4. **End-to-End Consistency Check**
+    - Confirm that every expected series for each repeated variable value appears both in the UI and in the backend response, proving full end-to-end propagation of repeated variables.
