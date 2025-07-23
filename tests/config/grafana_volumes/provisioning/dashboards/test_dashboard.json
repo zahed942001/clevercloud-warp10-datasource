@@ -266,62 +266,240 @@
       ],
       "title": "Table Example 2",
       "type": "table"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 18
+      },
+      "id": 7,
+      "panels": [],
+      "title": "Repeated Variables Template Example",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "default": true,
+        "type": "clevercloud-warp10-datasource",
+        "uid": "P62DF7D107A4865DF"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 19
+      },
+      "id": 8,
+      "maxPerRow": 2,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "repeat": "server_example",
+      "repeatDirection": "h",
+      "targets": [
+        {
+          "datasource": {
+            "type": "clevercloud-warp10-datasource",
+            "uid": "P62DF7D107A4865DF"
+          },
+          "expr": "NEWGTS\n'io.warp10.grafana.test' RENAME\n{ 'func' 'sinus' 'server_example' '$server_example' } RELABEL\n'sinus' STORE\n\nNEWGTS\n'io.warp10.grafana.testmetric' RENAME\n{ 'func' 'cosinus' 'server_example' '$server_example' } RELABEL\n'cosinus' STORE\n\n$interval 20 / TOLONG 'step' STORE\n\n<% $step + %> 'stepMacro' STORE\n<% 'index' STORE $sinus $index NaN NaN NaN $index SIN  ADDVALUE DROP %> 'execMacroSinus' STORE\n<% 'index' STORE $cosinus $index NaN NaN NaN $index COS  ADDVALUE DROP %> 'execMacroCoinus' STORE\n\n$start $end $stepMacro $execMacroSinus FORSTEP\n$start $end $stepMacro $execMacroCoinus FORSTEP\n$sinus $cosinus\n",
+          "refId": "A"
+        }
+      ],
+      "title": "Repeated Variable Example: $server_example",
+      "type": "timeseries"
     }
   ],
-  "preload": false,
   "refresh": "",
-  "schemaVersion": 40,
+  "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": [
       {
-        "type": "query",
-        "name": "testList",
-        "label": "Query Variable",
-        "query": "1 5 <% %> FOR 'a' 'b b'",
+        "current": {
+          "selected": false,
+          "text": [
+            "b b"
+          ],
+          "value": [
+            "b b"
+          ]
+        },
+        "datasource": {
+          "type": "clevercloud-warp10-datasource",
+          "uid": "P62DF7D107A4865DF"
+        },
         "definition": "1 5 <% %> FOR 'a' 'b b'",
-        "multi": true,
+        "hide": 0,
         "includeAll": false,
+        "label": "Query Variable",
+        "multi": true,
+        "name": "testList",
+        "options": [],
+        "query": "1 5 <% %> FOR 'a' 'b b'",
         "refresh": 1,
         "regex": "",
-        "options": [],
-        "current": {
-          "text": [],
-          "value": []
-        }
+        "skipUrlSync": false,
+        "sort": 0,
+        "type": "query"
       },
       {
-        "type": "custom",
-        "name": "testCustom",
-        "label": "Custom Variable",
-        "query": "a, b, c",
-        "multi": false,
-        "includeAll": false,
-        "options": [],
         "current": {
+          "selected": false,
           "text": "a",
           "value": "a"
-        }
+        },
+        "hide": 0,
+        "includeAll": false,
+        "label": "Custom Variable",
+        "multi": false,
+        "name": "testCustom",
+        "options": [
+          {
+            "selected": true,
+            "text": "a",
+            "value": "a"
+          },
+          {
+            "selected": false,
+            "text": "b",
+            "value": "b"
+          },
+          {
+            "selected": false,
+            "text": "c",
+            "value": "c"
+          }
+        ],
+        "query": "a, b, c",
+        "skipUrlSync": false,
+        "type": "custom"
       },
       {
-        "type": "textbox",
-        "name": "testTextbox",
-        "label": "Textbox Variable",
-        "query": "",
         "current": {
+          "selected": false,
           "text": "typedValue",
           "value": "typedValue"
-        }
+        },
+        "hide": 0,
+        "label": "Textbox Variable",
+        "name": "testTextbox",
+        "options": [],
+        "query": "typedValue",
+        "skipUrlSync": false,
+        "type": "textbox"
       },
       {
-        "type": "constant",
-        "name": "testConstant",
+        "hide": 2,
         "label": "Constant Variable",
+        "name": "testConstant",
         "query": "my_constant_value",
+        "skipUrlSync": false,
+        "type": "constant"
+      },
+      {
+        "allValue": "",
         "current": {
-          "text": "my_constant_value",
-          "value": "my_constant_value"
-        }
+          "selected": false,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "multi": true,
+        "name": "server_example",
+        "options": [
+          {
+            "selected": true,
+            "text": "All",
+            "value": "$__all"
+          },
+          {
+            "selected": false,
+            "text": "server1",
+            "value": "server1"
+          },
+          {
+            "selected": false,
+            "text": "server2",
+            "value": "server2"
+          }
+        ],
+        "query": "server1, server2",
+        "queryValue": "",
+        "skipUrlSync": false,
+        "type": "custom"
       }
     ]
   },

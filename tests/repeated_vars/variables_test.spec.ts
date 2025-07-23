@@ -9,10 +9,17 @@
  * Scope: Dashboard variable injection, backend response validation.
  */
 import { test, expect } from '@playwright/test';
-import { log, getGrafanaVersion, goToNewDashboard, clickEditButton } from '../utils';
+import { log, getGrafanaVersion, isVersionGreaterOrEqual, goToNewDashboard, clickEditButton } from '../utils';
 
 // Editor JSON Model Validation
 test('Variables: UI to backend injection works as expected', async ({ page }) => {
+  const version = await getGrafanaVersion(page);
+  log(`--> Detected Grafana version: ${version}`);
+  if (!isVersionGreaterOrEqual(version, '11.0.0')) {
+    test.skip();
+    return;
+  }
+
   const responses: any[] = [];
 
   // Intercept responses
@@ -40,11 +47,6 @@ test('Variables: UI to backend injection works as expected', async ({ page }) =>
 
   // Load Grafana dashboard panel
   log('--> Navigating to dashboard with panel...');
-  await page.goto('http://localhost:3000');
-
-  const version = await getGrafanaVersion(page);
-  log(`--> Detected Grafana version: ${version}`);
-
   await page.goto('http://localhost:3000/dashboards');
   await page.waitForTimeout(1000);
   await goToNewDashboard(page);

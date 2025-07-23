@@ -27,7 +27,7 @@ async function openDashboardEdit(page: Page) {
   await clickDashboardSettingsButton(page);
 }
 
-function isVersionGreaterOrEqual(v: string, target: string): boolean {
+export function isVersionGreaterOrEqual(v: string, target: string): boolean {
   const vParts = v.split('.').map(Number);
   const tParts = target.split('.').map(Number);
   for (let i = 0; i < tParts.length; i++) {
@@ -1242,4 +1242,28 @@ export async function testDatasourceInvalidURL(
   await expect(alertSelector).toBeVisible({ timeout: 3000 });
   const alertText = await alertSelector.textContent();
   expect(alertText).toContain('connect: connection refused');
+}
+
+export async function checkServerSeries(page: Page, responses: any[], server: string) {
+  const expectedSeries = [
+    `io.warp10.grafana.testmetric{func=cosinus,server_example=${server}}`,
+    `io.warp10.grafana.test{func=sinus,server_example=${server}}`
+  ];
+
+  for (const series of expectedSeries) {
+    await expect(page.locator(`text=${series}`)).toBeVisible({ timeout: 5000 });
+    log(`--> Series visible in UI: ${series}`);
+  }
+
+  const matchingResponse = responses.find(r => {
+    if (!r.url.includes('/api/ds/query') || r.status !== 200) {return false;}
+    const frames = r.json?.results?.A?.frames ?? [];
+    const frameNames = frames.map(
+        (frame: any) => frame?.schema?.fields?.[1]?.name
+    );
+    return expectedSeries.every(name => frameNames.includes(name));
+  });
+
+  expect(matchingResponse).toBeTruthy();
+  log(`--> Found /api/ds/query response containing BOTH series for ${server}. (backend)`);
 }
