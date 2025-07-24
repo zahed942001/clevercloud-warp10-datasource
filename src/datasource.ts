@@ -60,14 +60,18 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
    * as expected
    * */
   applyTemplateVariables(query: WarpQuery, _scopedVars: ScopedVars): WarpQuery {
+    let script =
+      this.computeTimeVars(this.request) +
+      this.addDashboardVariables() +
+      this.computeGrafanaContext() +
+      this.computePanelRepeatVars(_scopedVars) +
+      query.expr;
+
+    script = getTemplateSrv().replace(script, _scopedVars);
+
     return {
       ...query,
-      expr:
-        this.computeTimeVars(this.request) +
-        this.addDashboardVariables() +
-        this.computeGrafanaContext() +
-        this.computePanelRepeatVars(_scopedVars) +
-        query.expr,
+      expr: script,
     };
   }
 
