@@ -130,6 +130,9 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
         refId: request.targets[0].refId,
         hideLabels: request.targets[0]?.hideLabels ? request.targets[0]?.hideLabels : false,
       };
+
+      console.log("scopedVars", request.scopedVars);
+
       request.targets[0] = this.applyTemplateVariables(query, request.scopedVars);
     }
 
@@ -315,6 +318,9 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
    */
   private addDashboardVariables(): string {
     let wsHeader = '';
+
+    console.log("adddashb var",  getTemplateSrv().getVariables());
+    console.log("gettemplateserv var",  getTemplateSrv());
 
     getTemplateSrv()
       .getVariables()
