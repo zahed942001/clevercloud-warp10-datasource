@@ -369,7 +369,7 @@
             "type": "clevercloud-warp10-datasource",
             "uid": "P62DF7D107A4865DF"
           },
-          "expr": "NEWGTS\n'io.warp10.grafana.test' RENAME\n{ 'func' 'sinus' 'server_example' '$server_example' } RELABEL\n'sinus' STORE\n\nNEWGTS\n'io.warp10.grafana.testmetric' RENAME\n{ 'func' 'cosinus' 'server_example' '$server_example' } RELABEL\n'cosinus' STORE\n\n$interval 20 / TOLONG 'step' STORE\n\n<% $step + %> 'stepMacro' STORE\n<% 'index' STORE $sinus $index NaN NaN NaN $index SIN  ADDVALUE DROP %> 'execMacroSinus' STORE\n<% 'index' STORE $cosinus $index NaN NaN NaN $index COS  ADDVALUE DROP %> 'execMacroCoinus' STORE\n\n$start $end $stepMacro $execMacroSinus FORSTEP\n$start $end $stepMacro $execMacroCoinus FORSTEP\n$sinus $cosinus\n",
+          "expr": "NEWGTS\n'io.warp10.grafana.test' RENAME\n{ 'func' 'sinus' 'server_example' $server_example_repeat } RELABEL\n'sinus' STORE\n\nNEWGTS\n'io.warp10.grafana.testmetric' RENAME\n{ 'func' 'cosinus' 'server_example' $server_example_repeat } RELABEL\n'cosinus' STORE\n\n$interval 20 / TOLONG 'step' STORE\n\n<% $step + %> 'stepMacro' STORE\n<% 'index' STORE $sinus $index NaN NaN NaN $index SIN  ADDVALUE DROP %> 'execMacroSinus' STORE\n<% 'index' STORE $cosinus $index NaN NaN NaN $index COS  ADDVALUE DROP %> 'execMacroCoinus' STORE\n\n$start $end $stepMacro $execMacroSinus FORSTEP\n$start $end $stepMacro $execMacroCoinus FORSTEP\n$sinus $cosinus\n",
           "refId": "A"
         }
       ],

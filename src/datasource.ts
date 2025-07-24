@@ -60,14 +60,12 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
    * as expected
    * */
   applyTemplateVariables(query: WarpQuery, _scopedVars: ScopedVars): WarpQuery {
-    let script =
-      this.computeTimeVars(this.request) +
-      this.addDashboardVariables() +
+    let header =  this.computeTimeVars(this.request) +
+      this.addDashboardVariables(_scopedVars) +
       this.computeGrafanaContext() +
-      this.computePanelRepeatVars(_scopedVars) +
-      query.expr;
+      this.computePanelRepeatVars(_scopedVars);
 
-    script = getTemplateSrv().replace(script, _scopedVars);
+    let script = header + query.expr;
 
     return {
       ...query,
@@ -135,6 +133,7 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
         hideLabels: request.targets[0]?.hideLabels ? request.targets[0]?.hideLabels : false,
       };
 
+      console.log("request", request);
       console.log("scopedVars", request.scopedVars);
 
       request.targets[0] = this.applyTemplateVariables(query, request.scopedVars);
@@ -320,7 +319,7 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
    * @return {string} WarpScript header
    * @private
    */
-  private addDashboardVariables(): string {
+  private addDashboardVariables(_scopedVars: ScopedVars): string {
     let wsHeader = '';
 
     console.log("adddashb var",  getTemplateSrv().getVariables());
@@ -329,13 +328,13 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
     getTemplateSrv()
       .getVariables()
       .forEach((myvar) => {
-        wsHeader += this.processDashboardVariable(myvar);
+        wsHeader += this.processDashboardVariable(myvar, _scopedVars);
       });
 
     return wsHeader;
   }
 
-  private processDashboardVariable(myVar: any): string {
+  private processDashboardVariable(myVar: any, _scopedVars: ScopedVars): string {
     let wsHeadertoAdd = '';
 
     const value = myVar.current.value;
@@ -356,7 +355,16 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
           .map((o: { value: any }) => o.value);
         wsHeadertoAdd += `[ ${allValues.map((s) => `'${s}'`).join(' ')} ] '${myVar.name}_list' STORE\n`; // all is stored as string in generated WarpScript.
         // create a ready to use regexp in the variable
+
+        // IF THE VARIABLE IS A LIST THEN WE ADD THE _repeat variable
+        // add local value for this var
+        const replace = getTemplateSrv().replace(`$${myVar.name}`, _scopedVars)
+        console.log("replace", replace);
+        wsHeadertoAdd += ` '${replace}' '${myVar.name}_repeat' STORE\n`;
+
         wsHeadertoAdd += ` '~' $${myVar.name}_list REOPTALT + '${myVar.name}' STORE\n`;
+
+
       }
     } else if (Array.isArray(value)) {
       // user checks several choices
@@ -368,6 +376,12 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
         // several values checked : do a regexp
         //also create a ready to use regexp, suffixed by _wsregexp
         wsHeadertoAdd += ` '~' $${myVar.name}_list REOPTALT + '${myVar.name}' STORE\n`;
+
+        // IF THE VARIABLE IS A LIST THEN WE ADD THE _repeat variable
+        // add local value for this var
+        const replace = getTemplateSrv().replace(`$${myVar.name}`, _scopedVars)
+        console.log("replace", replace);
+        wsHeadertoAdd += ` '${replace}' '${myVar.name}_repeat' STORE\n`;
       }
     } else {
       // no multiple selection, variable is the string. As type is lost by Grafana, there is no safe way to assume something different than a string here.
@@ -425,6 +439,7 @@ export class DataSource extends DataSourceWithBackend<WarpQuery, WarpDataSourceO
   async metricFindQuery(query: string, options?: any): Promise<MetricFindValue[]> {
     let warpQuery: WarpQuery = {
       refId: '',
+      // TODO: we need to make a specific function for metricFindQuery
       expr: this.addDashboardVariables() + this.computeGrafanaContext() + query,
       hideLabels: false,
     };
