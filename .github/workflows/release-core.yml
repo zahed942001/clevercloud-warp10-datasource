@@ -46,6 +46,14 @@ jobs:
           echo "version=$PLUGIN_VERSION" >> $GITHUB_OUTPUT
           echo "✔️ Valid version $PLUGIN_VERSION"
 
+      - name: Debug git and version state
+        run: |
+          echo "Current HEAD:"; git log -1
+          echo "Tags at HEAD:"; git tag --points-at HEAD
+          echo "plugin.json:"; cat src/plugin.json | grep version
+          echo "package.json:"; cat package.json | grep version
+          echo "GITHUB_REF=$GITHUB_REF"
+
       - name: Create Git tag if new version
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
         run: |
