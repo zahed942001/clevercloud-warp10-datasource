@@ -41,8 +41,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Unit tests
-        run: npm run test:ci
+#      CVE in jest dependency and we have no unit test, disable this for the moment
+#      - name: Unit tests
+#        run: npm run test:ci
 
       - name: Build frontend
         run: |
